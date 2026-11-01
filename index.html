@@ -68,9 +68,9 @@ button.alt{background:var(--field);color:var(--text);border:1px solid var(--edge
 input[type=file]{display:none}
 .two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.presets button{display:flex;flex-direction:column;align-items:center;gap:7px;padding:10px 4px;border-radius:16px;border:1px solid var(--edge);background:var(--field);color:var(--text);font:inherit;font-weight:600;font-size:11px;cursor:pointer;min-width:0}
+.presets button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:9px 4px;border-radius:16px;border:1px solid var(--edge);background:var(--field);color:var(--text);font:inherit;font-weight:600;font-size:11px;cursor:pointer;min-width:0}
 .presets button.on{border-color:var(--pri1);box-shadow:0 0 0 2px rgba(59,130,246,.45)}
-.presets i{display:block;width:44px;height:44px;border-radius:50%;border:2px solid var(--stroke);box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.presets i{display:block;width:36px;height:36px;border-radius:50%;border:2px solid var(--stroke);box-shadow:0 4px 12px rgba(0,0,0,.25)}
 .crow{display:flex;align-items:center;gap:10px}
 .crow .n{flex:1;font-size:13px;min-width:0}
 input[type=color]{-webkit-appearance:none;appearance:none;width:40px;height:40px;padding:0;border:0;background:none;cursor:pointer;flex:none}
@@ -159,6 +159,7 @@ button.mini{flex:none;font:inherit;font-weight:600;font-size:12px;padding:9px 11
     <div class="crow"><span class="n">Result number</span><input type="color" id="cResult" value="#0b1f4d"><input class="hex" type="text" id="cResultH" value="#0B1F4D" maxlength="7"><button class="mini" type="button" data-c="cResult">Copy</button></div>
     <div class="crow"><span class="n">Card header</span><input type="color" id="cBox" value="#0b1f4d"><input class="hex" type="text" id="cBoxH" value="#0B1F4D" maxlength="7"><button class="mini" type="button" data-c="cBox">Copy</button></div>
     <div class="crow"><span class="n">Card header text</span><input type="color" id="cLabel" value="#ffffff"><input class="hex" type="text" id="cLabelH" value="#FFFFFF" maxlength="7"><button class="mini" type="button" data-c="cLabel">Copy</button></div>
+    <div class="crow"><span class="n">Background tint</span><input type="color" id="cBg" value="#0a1630"><input class="hex" type="text" id="cBgH" value="#0A1630" maxlength="7"><button class="mini" type="button" data-c="cBg">Copy</button></div>
     <p class="hint">Tap a hex code to paste a colour like #FF0000, with or without the #. Tap Copy to copy one.</p>
     <div class="msg" id="cmsg"></div>
   </section>
@@ -175,7 +176,13 @@ button.mini{flex:none;font:inherit;font-weight:600;font-size:12px;padding:9px 11
     </div>
     <p class="hint">YouTube thumbnails must be 16:9 and under 2 MB. JPG is shrunk automatically to fit.</p>
     <button class="p" id="dl" type="button" style="width:100%">Download thumbnail</button>
+    <button class="p alt" id="shareBtn" type="button" style="width:100%">Share / Save to Photos</button>
     <div class="msg" id="msg"></div>
+    <div id="resBox" style="display:none;flex-direction:column;gap:8px">
+      <p class="lbl">Your finished thumbnail</p>
+      <img id="resImg" alt="Finished thumbnail" style="width:100%;height:auto;border-radius:14px;display:block">
+      <p class="hint">Press and hold the image, then choose Save to Photos.</p>
+    </div>
   </section>
 </div>
 
@@ -185,24 +192,30 @@ button.mini{flex:none;font:inherit;font-weight:600;font-size:12px;padding:9px 11
   var cv=document.getElementById('c'),ctx=null;
   var $=function(i){return document.getElementById(i)};
   var FONT='Poppins, "Segoe UI", Arial, sans-serif';
-  var CIDS=['cTitle','cAccent','cDate','cResult','cBox','cLabel'];
+  var CIDS=['cTitle','cAccent','cDate','cResult','cBox','cLabel','cBg'];
 
   // Ready-made looks, based on the Daily Live Results thumbnails
   var PRESETS=[
-    {k:'navy', n:'Glass Navy',   cTitle:'#ffffff',cAccent:'#ffc400',cDate:'#0b1f4d',cResult:'#0b1f4d',cBox:'#0b1f4d',cLabel:'#ffffff'},
-    {k:'royal',n:'Royal Blue',   cTitle:'#ffe600',cAccent:'#f5b800',cDate:'#0a2a7a',cResult:'#0a2a7a',cBox:'#0a2a7a',cLabel:'#ffffff'},
-    {k:'gold', n:'Gold & Maroon',cTitle:'#ffd21f',cAccent:'#f5b800',cDate:'#7a1a10',cResult:'#7a1a10',cBox:'#7a1a10',cLabel:'#ffffff'},
-    {k:'fire', n:'Fire',         cTitle:'#ffd400',cAccent:'#ff9d00',cDate:'#8f1410',cResult:'#8f1410',cBox:'#a31510',cLabel:'#ffffff'},
-    {k:'green',n:'Emerald',      cTitle:'#ffffff',cAccent:'#ffc400',cDate:'#0b4a2c',cResult:'#0b4a2c',cBox:'#0b4a2c',cLabel:'#ffffff'},
-    {k:'crimson',n:'Crimson',     cTitle:'#ffffff',cAccent:'#ffd23a',cDate:'#6d0f1e',cResult:'#6d0f1e',cBox:'#6d0f1e',cLabel:'#ffffff'},
-    {k:'black',n:'Black & Gold', cTitle:'#ffffff',cAccent:'#d4af37',cDate:'#111827',cResult:'#111827',cBox:'#111827',cLabel:'#ffffff'},
-    {k:'teal', n:'Ocean Teal',   cTitle:'#ffffff',cAccent:'#34d3c0',cDate:'#0b3b4a',cResult:'#0b3b4a',cBox:'#0b3b4a',cLabel:'#ffffff'},
-    {k:'purple',n:'Royal Purple',cTitle:'#ffffff',cAccent:'#fbbf24',cDate:'#3b1a78',cResult:'#3b1a78',cBox:'#3b1a78',cLabel:'#ffffff'},
-    {k:'sunset',n:'Sunset',      cTitle:'#ffffff',cAccent:'#ff8a00',cDate:'#9a2d0f',cResult:'#9a2d0f',cBox:'#9a2d0f',cLabel:'#ffffff'},
-    {k:'sky',  n:'Sky Steel',    cTitle:'#ffffff',cAccent:'#38bdf8',cDate:'#0f2a44',cResult:'#0f2a44',cBox:'#0f2a44',cLabel:'#ffffff'},
-    {k:'rose', n:'Rose',         cTitle:'#ffffff',cAccent:'#fda4af',cDate:'#831843',cResult:'#831843',cBox:'#831843',cLabel:'#ffffff'},
-    {k:'lime', n:'Lime Forest',  cTitle:'#ffffff',cAccent:'#a3e635',cDate:'#14532d',cResult:'#14532d',cBox:'#14532d',cLabel:'#ffffff'},
-    {k:'graph',n:'Graphite Red', cTitle:'#ffffff',cAccent:'#ff5a5f',cDate:'#1f2937',cResult:'#1f2937',cBox:'#1f2937',cLabel:'#ffffff'}
+    {k:'p0',n:'Midnight Gold',cTitle:'#ffffff',cAccent:'#ffc400',cDate:'#0b1f4d',cResult:'#0b1f4d',cBox:'#0b1f4d',cLabel:'#ffffff',cBg:'#0a1630'},
+    {k:'p1',n:'Royal Blue',cTitle:'#ffffff',cAccent:'#fde047',cDate:'#1e40af',cResult:'#1e40af',cBox:'#1e40af',cLabel:'#ffffff',cBg:'#0c2468'},
+    {k:'p2',n:'Gold & Maroon',cTitle:'#ffffff',cAccent:'#f5b800',cDate:'#7a1a10',cResult:'#7a1a10',cBox:'#7a1a10',cLabel:'#ffffff',cBg:'#3b0d09'},
+    {k:'p3',n:'Fire',cTitle:'#ffffff',cAccent:'#ff9d00',cDate:'#b91c1c',cResult:'#b91c1c',cBox:'#b91c1c',cLabel:'#ffffff',cBg:'#4a0d0a'},
+    {k:'p4',n:'Emerald',cTitle:'#ffffff',cAccent:'#fcd34d',cDate:'#065f46',cResult:'#065f46',cBox:'#065f46',cLabel:'#ffffff',cBg:'#052e22'},
+    {k:'p5',n:'Crimson',cTitle:'#ffffff',cAccent:'#ffd166',cDate:'#881337',cResult:'#881337',cBox:'#881337',cLabel:'#ffffff',cBg:'#3f0a1c'},
+    {k:'p6',n:'Black & Gold',cTitle:'#ffffff',cAccent:'#d4af37',cDate:'#111827',cResult:'#111827',cBox:'#111827',cLabel:'#ffffff',cBg:'#0a0a0f'},
+    {k:'p7',n:'Ocean Teal',cTitle:'#ffffff',cAccent:'#2dd4bf',cDate:'#0b4f5c',cResult:'#0b4f5c',cBox:'#0b4f5c',cLabel:'#ffffff',cBg:'#06323b'},
+    {k:'p8',n:'Royal Purple',cTitle:'#ffffff',cAccent:'#fbbf24',cDate:'#4c1d95',cResult:'#4c1d95',cBox:'#4c1d95',cLabel:'#ffffff',cBg:'#2a0f55'},
+    {k:'p9',n:'Sunset',cTitle:'#ffffff',cAccent:'#fbbf24',cDate:'#c2410c',cResult:'#c2410c',cBox:'#c2410c',cLabel:'#ffffff',cBg:'#4a1d0a'},
+    {k:'p10',n:'Sky Steel',cTitle:'#ffffff',cAccent:'#38bdf8',cDate:'#0f3a5f',cResult:'#0f3a5f',cBox:'#0f3a5f',cLabel:'#ffffff',cBg:'#0a2540'},
+    {k:'p11',n:'Rose',cTitle:'#ffffff',cAccent:'#fda4af',cDate:'#9d174d',cResult:'#9d174d',cBox:'#9d174d',cLabel:'#ffffff',cBg:'#4a0d26'},
+    {k:'p12',n:'Lime Forest',cTitle:'#ffffff',cAccent:'#a3e635',cDate:'#166534',cResult:'#166534',cBox:'#166534',cLabel:'#ffffff',cBg:'#0a2f17'},
+    {k:'p13',n:'Graphite Red',cTitle:'#ffffff',cAccent:'#ef4444',cDate:'#1f2937',cResult:'#1f2937',cBox:'#1f2937',cLabel:'#ffffff',cBg:'#0f141b'},
+    {k:'p14',n:'Cobalt Cyan',cTitle:'#ffffff',cAccent:'#22d3ee',cDate:'#1d4ed8',cResult:'#1d4ed8',cBox:'#1d4ed8',cLabel:'#ffffff',cBg:'#0a1f5c'},
+    {k:'p15',n:'Indigo Pink',cTitle:'#ffffff',cAccent:'#f472b6',cDate:'#3730a3',cResult:'#3730a3',cBox:'#3730a3',cLabel:'#ffffff',cBg:'#1e1b4b'},
+    {k:'p16',n:'Bronze',cTitle:'#ffffff',cAccent:'#fcd34d',cDate:'#78350f',cResult:'#78350f',cBox:'#78350f',cLabel:'#ffffff',cBg:'#2e1608'},
+    {k:'p17',n:'Slate Mint',cTitle:'#ffffff',cAccent:'#34d399',cDate:'#1e293b',cResult:'#1e293b',cBox:'#1e293b',cLabel:'#ffffff',cBg:'#0f172a'},
+    {k:'p18',n:'Magenta Gold',cTitle:'#ffffff',cAccent:'#fde68a',cDate:'#86198f',cResult:'#86198f',cBox:'#86198f',cLabel:'#ffffff',cBg:'#3b0764'},
+    {k:'p19',n:'Silver Navy',cTitle:'#ffffff',cAccent:'#e2e8f0',cDate:'#1e293b',cResult:'#1e293b',cBox:'#1e293b',cLabel:'#ffffff',cBg:'#0b1220'}
   ];
 
   function pad(n){return (n<10?'0':'')+n}
@@ -212,6 +225,9 @@ button.mini{flex:none;font:inherit;font-weight:600;font-size:12px;padding:9px 11
   function ls(px){if('letterSpacing' in ctx)ctx.letterSpacing=px+'px'}
   function shadow(b,y,a){ctx.shadowColor='rgba(4,12,40,'+(a||.35)+')';ctx.shadowBlur=b;ctx.shadowOffsetY=y}
   function fit(text,maxW,start,weight){var s=start;do{ctx.font=weight+' '+s+'px '+FONT;s-=2}while(ctx.measureText(text).width>maxW&&s>14);return s+2}
+  function rgb(h){var n=parseInt(h.slice(1),16);return[n>>16,(n>>8)&255,n&255]}
+  function mixc(a,b,t){var x=rgb(a),y=rgb(b);return [0,1,2].map(function(i){return Math.round(x[i]+(y[i]-x[i])*t)})}
+  function css(c,a){return a==null?'rgb('+c.join(',')+')':'rgba('+c.join(',')+','+a+')'}
   function shade(h,a){var n=parseInt(h.slice(1),16),r=Math.min(255,(n>>16)+a),g=Math.min(255,((n>>8)&255)+a),b=Math.min(255,(n&255)+a);return 'rgb('+r+','+g+','+b+')'}
 
   function card(x,y,w,h,headH,label,value,valColor,valSize){
@@ -274,18 +290,19 @@ button.mini{flex:none;font:inherit;font-weight:600;font-size:12px;padding:9px 11
 
   function scene(){
     ctx.clearRect(0,0,W,H);
-    var bg=ctx.createLinearGradient(0,0,W,H);bg.addColorStop(0,'#14336f');bg.addColorStop(1,'#071530');
+    var bgc=$('cBg').value,bg=ctx.createLinearGradient(0,0,W,H);
+    bg.addColorStop(0,css(mixc(bgc,'#ffffff',.14)));bg.addColorStop(1,css(mixc(bgc,'#000000',.4)));
     ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
     if(img){
       var z=$('zoom').value/100,s=Math.max(W/img.width,H/img.height)*z,dw=img.width*s,dh=img.height*s;
       ctx.drawImage(img,(W-dw)/2+($('px').value/100)*W,(H-dh)/2+($('py').value/100)*H,dw,dh);
+      var dk=mixc(bgc,'#000000',.5),o=ctx.createLinearGradient(0,0,0,H);
+      o.addColorStop(0,css(dk,.86));o.addColorStop(.5,css(dk,.55));o.addColorStop(1,css(dk,.42));
+      ctx.fillStyle=o;ctx.fillRect(0,0,W,H);
     }else{
       ctx.fillStyle='rgba(255,255,255,.55)';ctx.font='600 30px '+FONT;ctx.textAlign='right';ctx.textBaseline='middle';
       ctx.fillText('Add a background photo',W-80,835);
     }
-    var o=ctx.createLinearGradient(0,0,0,H);
-    o.addColorStop(0,'rgba(4,12,40,.88)');o.addColorStop(.5,'rgba(4,12,40,.6)');o.addColorStop(1,'rgba(4,12,40,.4)');
-    ctx.fillStyle=o;ctx.fillRect(0,0,W,H);
     kicker();title();
     var d=parts(),cw=250,gap=25;
     chip(80,246,'DATE');
@@ -388,24 +405,61 @@ button.mini{flex:none;font:inherit;font-weight:600;font-size:12px;padding:9px 11
   // ---- export
   function toBlob(c,type,qv){return new Promise(function(res){c.toBlob(res,type,qv)})}
   function mb(n){return (n/1048576).toFixed(2)+' MB'}
-  $('dl').addEventListener('click',async function(){
-    var m=$('msg'),d=parts(),outW=+$('size').value,fmt=$('fmt').value;
-    m.textContent='Preparing image…';
+  var lastUrl=null;
+
+  async function makeImage(){
+    var d=parts(),outW=+$('size').value,fmt=$('fmt').value;
+    var c=document.createElement('canvas');render(c,outW);
+    var type=fmt==='jpg'?'image/jpeg':'image/png',qv=.95,blob=await toBlob(c,type,qv);
+    if(fmt==='jpg'){while(blob&&blob.size>2097152&&qv>.55){qv-=.05;blob=await toBlob(c,type,qv)}}
+    render(cv,1280);
+    if(!blob)return null;
+    return{blob:blob,type:type,name:'hiaoi-'+d.dd+d.mm+d.yy+'-round'+stage+'-'+outW+'.'+fmt};
+  }
+
+  function showResult(r){
+    if(lastUrl)URL.revokeObjectURL(lastUrl);
+    lastUrl=URL.createObjectURL(r.blob);
+    $('resImg').src=lastUrl;$('resBox').style.display='flex';
+  }
+
+  async function saveFile(r){
+    // 1) inside Claude
     try{
-      var c=document.createElement('canvas');render(c,outW);
-      var type=fmt==='jpg'?'image/jpeg':'image/png',qv=.95,blob=await toBlob(c,type,qv);
-      if(fmt==='jpg'){while(blob&&blob.size>2097152&&qv>.55){qv-=.05;blob=await toBlob(c,type,qv)}}
-      render(cv,1280);
-      if(!blob){m.textContent='Could not create the image.';return}
-      var name='hiaoi-'+d.dd+d.mm+d.yy+'-round'+stage+'-'+outW+'.'+fmt;
-      var dls=window.claude&&await window.claude.use('downloads');
-      if(!dls){m.textContent='Saving is not available here. Press and hold the preview image to save it.';return}
-      await dls.save({filename:name,data:blob});
-      m.textContent='Saved '+name+' ('+mb(blob.size)+')'+(blob.size>2097152?' · over YouTube’s 2 MB limit, switch to JPG':'');
-    }catch(err){
-      render(cv,1280);
-      m.textContent=(err&&err.code==='declined')?'Save cancelled.':'Could not save. Press and hold the preview to save it.';
-    }
+      var dls=window.claude&&window.claude.use&&await window.claude.use('downloads');
+      if(dls){await dls.save({filename:r.name,data:r.blob});return 'saved'}
+    }catch(e){if(e&&e.code==='declined')return 'cancelled'}
+    // 2) any normal browser (GitHub Pages, phone or desktop)
+    try{
+      var a=document.createElement('a');a.href=lastUrl;a.download=r.name;a.rel='noopener';
+      document.body.appendChild(a);a.click();a.remove();return 'download';
+    }catch(e){}
+    return 'none';
+  }
+
+  $('dl').addEventListener('click',async function(){
+    var m=$('msg');m.textContent='Preparing image…';
+    try{
+      var r=await makeImage();if(!r){m.textContent='Could not create the image.';return}
+      showResult(r);
+      var res=await saveFile(r),size=' ('+mb(r.blob.size)+')';
+      var warn=r.blob.size>2097152?' Over YouTube’s 2 MB limit: switch to JPG.':'';
+      if(res==='cancelled')m.textContent='Save cancelled.';
+      else if(res==='saved')m.textContent='Saved '+r.name+size+'.'+warn;
+      else m.textContent='Download started: '+r.name+size+'. If nothing downloaded, press and hold the image below and choose Save to Photos.'+warn;
+    }catch(err){m.textContent='Could not create the image. Try a smaller size.'}
+  });
+
+  if(!(navigator.canShare&&navigator.share))$('shareBtn').style.display='none';
+  $('shareBtn').addEventListener('click',async function(){
+    var m=$('msg');m.textContent='Preparing image…';
+    try{
+      var r=await makeImage();if(!r){m.textContent='Could not create the image.';return}
+      showResult(r);
+      var f=new File([r.blob],r.name,{type:r.type});
+      if(navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'Thumbnail'});m.textContent='Shared '+r.name+'.'}
+      else m.textContent='Sharing is not supported here. Press and hold the image below to save it.';
+    }catch(err){m.textContent=(err&&err.name==='AbortError')?'':'Could not share. Press and hold the image below to save it.'}
   });
 
   setToday();
